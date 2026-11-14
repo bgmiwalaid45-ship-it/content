@@ -1,5 +1,5 @@
-
-import { NextRequest, NextResponse } from "next/server";
+﻿
+import { NextRequest, NextResponse, connection } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createDecipheriv } from "node:crypto";
 import { google } from "googleapis";
@@ -89,6 +89,7 @@ function getDates(period: Period) {
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
   try {
     const input = request.nextUrl.searchParams.get("period") || "28";
 
@@ -321,3 +322,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

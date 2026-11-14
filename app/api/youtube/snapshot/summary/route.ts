@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse, connection } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,6 +11,7 @@ function istDate(date: Date): string {
 }
 
 export async function GET() {
+  await connection();
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

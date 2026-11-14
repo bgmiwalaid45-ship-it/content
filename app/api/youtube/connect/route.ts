@@ -1,11 +1,12 @@
-
-import { NextResponse } from "next/server";
+﻿
+import { NextResponse, connection } from "next/server";
 import { google } from "googleapis";
 import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 
 
 export async function GET() {
+  await connection();
   try {
     // Verify that the user is logged into our website
     const supabase = await createClient();
@@ -74,3 +75,4 @@ export async function GET() {
     );
   }
 }
+

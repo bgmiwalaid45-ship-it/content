@@ -1,5 +1,5 @@
-
-import { NextRequest, NextResponse } from "next/server";
+﻿
+import { NextRequest, NextResponse, connection } from "next/server";
 import { google } from "googleapis";
 import { createCipheriv, randomBytes, timingSafeEqual } from "node:crypto";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
@@ -30,6 +30,7 @@ function encryptToken(token: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -175,3 +176,4 @@ export async function GET(request: NextRequest) {
     return redirect("failed");
   }
 }
+

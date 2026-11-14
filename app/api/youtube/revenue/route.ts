@@ -1,5 +1,5 @@
-
-import { NextResponse } from "next/server";
+﻿
+import { NextResponse, connection } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createDecipheriv } from "node:crypto";
 import { google } from "googleapis";
@@ -33,6 +33,7 @@ function decryptToken(value: string): string {
 }
 
 export async function GET() {
+  await connection();
   try {
     const supabase = await createClient();
 
@@ -169,3 +170,4 @@ export async function GET() {
     );
   }
 }
+
