@@ -1,0 +1,31 @@
+name: Smart YouTube Daily Snapshot
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. 00:30–06:15 UTC = 06:00–11:45 IST.
+    - cron: '*/15 1-5 * * *'
+    - cron: '30,45 0 * * *'
+    - cron: '0,15 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call secure Vercel snapshot endpoint
+        env:
+          SNAPSHOT_URL: https://content-five-alpha.vercel.app/api/youtube/snapshot
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo 'Missing GitHub Actions secret CRON_SECRET'
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            --retry 2 --retry-delay 5 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$SNAPSHOT_URL"
