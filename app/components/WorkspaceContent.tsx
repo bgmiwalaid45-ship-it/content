@@ -140,7 +140,7 @@ function DailyChart({
                 ))}
                 {item.values.map((value, i) => value === null ? null : (
                   <circle key={i} cx={x(i)} cy={y(value)} r="3" fill={item.color}>
-                    <title>{`${item.name} Â· ${dates[i]} Â· ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
+                    <title>{`${item.name} · ${dates[i]} · ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
                   </circle>
                 ))}
               </g>
@@ -175,7 +175,7 @@ function ChannelAvatar({
   if (!channel.thumbnail || broken) {
     return (
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600 font-bold">
-        â–¶
+        ▶
       </div>
     );
   }
@@ -447,43 +447,47 @@ const disconnectChannel = async (channel: Channel) => {
     todayReady && value !== null && value !== undefined ? formatNumber(value) : "Collecting Data";
   const stats = [
     {
-      label: isTotal ? "Lifetime Views" : "Period Views",
+      label: isTotal ? "Lifetime views" : "Period views",
       value: isTotal ? formatNumber(totalViews) : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : "Pending",
-      icon: "â–¶",
-      detail: isTotal ? "All connected channels Â· lifetime" : isToday ? "Snapshot-to-snapshot views change Â· 9 AM IST" : "YouTube Analytics reported views",
+      detail: isTotal ? "Across connected channels" : isToday ? "Awaiting consecutive daily snapshots" : "YouTube Analytics",
+      accent: "blue",
+      symbol: "↗",
     },
     {
-      label: isTotal ? "Current Subscribers" : "Subscribers Gained",
+      label: isTotal ? "Total subscribers" : "Subscribers gained",
       value: isTotal ? formatNumber(totalSubscribers) : isToday ? todayValue(todayTotals?.subscribersChange) : isReported ? formatNumber(periodTotals.subscribersGained) : "Pending",
-      icon: "ðŸ‘¥",
-      detail: isTotal ? "Current subscriber count" : isToday ? "Net subscriber change Â· 9 AM snapshots" : "Gross gains Â· not net change",
+      detail: isTotal ? "Current combined subscriber count" : isToday ? "Net change from daily snapshots" : "Gross subscribers gained",
+      accent: "violet",
+      symbol: "◎",
     },
     {
-      label: "Estimated Revenue",
+      label: "Estimated revenue",
       value: isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending",
-      icon: "ðŸ’°",
-      detail: isTotal ? "Lifetime revenue not provided by this API" : "USD Â· YouTube estimated earnings",
+      detail: isTotal ? "Lifetime revenue not available" : "USD · reported YouTube earnings",
+      accent: "emerald",
+      symbol: "$",
     },
     {
-      label: isTotal ? "Total Videos" : isToday ? "Videos Change" : "Subscribers Net Change",
+      label: isTotal ? "Published videos" : isToday ? "Videos change" : "Net subscribers",
       value: isTotal ? formatNumber(totalVideos) : isToday ? todayValue(todayTotals?.videosChange) : isReported ? formatNumber(periodTotals.subscribersGained - periodTotals.subscribersLost) : "Pending",
-      icon: "ðŸ“ˆ",
-      detail: isTotal ? "Current published video count" : isToday ? "Net video count change" : "Gained minus lost subscribers",
+      detail: isTotal ? "Across all connected channels" : isToday ? "Daily snapshot comparison" : "Gained minus lost",
+      accent: "amber",
+      symbol: "▤",
     },
   ];
 
   return (
-    <section id="dashboard" className="w-full min-w-0">
-          <header className="mb-9 flex flex-wrap items-center justify-between gap-4">
+    <section id="dashboard" className="w-full min-w-0 pb-8">
+          <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-400">
-                Workspace / Overview
+                Workspace / Creator analytics
               </p>
-              <h1 className="mt-2 text-2xl font-bold md:text-3xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white md:text-4xl">
                 {pageTitle}
               </h1>
               <p className="mt-1 text-sm text-slate-400">
-                {isDashboard ? "Your YouTube performance, all in one place." : `Explore your ${pageTitle.toLowerCase()} data.`}
+                {isDashboard ? "Track performance, revenue, and growth across your channels." : `Manage your ${pageTitle.toLowerCase()} in one workspace.`}
               </p>
             </div>
 
@@ -491,15 +495,15 @@ const disconnectChannel = async (channel: Channel) => {
               <button
                 onClick={() => void loadDashboard()}
                 disabled={loading}
-                className="rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold hover:bg-white/5 disabled:opacity-50"
+                className="rounded-xl border border-white/10 bg-[#111827] px-4 py-3 text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-50"
               >
-                {loading ? "Loading..." : "â†» Refresh"}
+                {loading ? "Loading..." : "↻ Refresh"}
               </button>
 
               <button
                 type="button"
                 onClick={() => setConnectModalOpen(true)}
-                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500"
+                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold shadow-lg shadow-blue-900/20 transition-colors hover:bg-blue-500"
               >
                 + Connect Channel
               </button>
@@ -580,52 +584,45 @@ const disconnectChannel = async (channel: Channel) => {
           )}
 
           {(isDashboard || isAnalyticsPage) && (
-            <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#111a2b] p-4">
-            <div>
-              <p className="font-semibold">Overview Filter</p>
-              <p className="text-xs text-slate-400">Choose the reporting period for the top cards and daily graphs.</p>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 shadow-sm">
+              <div>
+                <p className="text-sm font-semibold text-white">Reporting period</p>
+                <p className="mt-1 text-xs text-slate-400">Choose the data range for performance metrics.</p>
+              </div>
+              <div className="flex flex-wrap gap-1 rounded-xl border border-white/10 bg-[#080f1e] p-1">
+                {([
+                  ["today", "Today"], ["yesterday", "Yesterday"],
+                  ["month", "This month"], ["total", "Lifetime"],
+                ] as const).map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setPeriod(key)}
+                    aria-pressed={period === key}
+                    className={`rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors ${period === key ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {([
-                ["today", "Today"], ["yesterday", "Yesterday"],
-                ["month", "This Month"], ["total", "Total"],
-              ] as const).map(([key, label]) => (
-                <button key={key} type="button" onClick={() => setPeriod(key)}
-                  className={`rounded-lg px-3 py-2 text-xs font-semibold ${period === key ? "bg-blue-600 text-white" : "bg-white/5 text-slate-300 hover:bg-white/10"}`}>
-                  {label}
-                </button>
+          )}
+          {isDashboard && (
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {stats.map((stat) => (
+                <div key={stat.label} className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm transition-colors hover:border-white/20">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-medium text-slate-400">{stat.label}</p>
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
+                      stat.accent === "blue" ? "bg-blue-500/10 text-blue-400" :
+                      stat.accent === "violet" ? "bg-violet-500/10 text-violet-400" :
+                      stat.accent === "emerald" ? "bg-emerald-500/10 text-emerald-400" :
+                      "bg-amber-500/10 text-amber-400"
+                    }`}>{stat.symbol}</span>
+                  </div>
+                  <p className={`mt-5 text-2xl font-bold tracking-tight md:text-3xl ${stat.accent === "emerald" && stat.value.startsWith("$") ? "text-emerald-400" : "text-white"}`}>
+                    {loading ? "—" : stat.value}
+                  </p>
+                  <p className="mt-3 min-h-8 text-xs leading-relaxed text-slate-500">{stat.detail}</p>
+                </div>
               ))}
             </div>
-          </div>
-            </>
-          )}
-          {(isDashboard) && (
-            <>
-          <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl border border-white/10 bg-[#111a2b] p-5"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-400">
-                    {stat.label}
-                  </p>
-                  <span className="text-xl">{stat.icon}</span>
-                </div>
-
-                <p className="mt-4 text-2xl font-bold">
-                  {loading ? "..." : stat.value}
-                </p>
-                <p className="mt-2 text-xs text-slate-500">
-                  {stat.detail}
-                </p>
-              </div>
-            ))}
-          </div>
-
-            </>
           )}
           {(isAnalyticsPage) && (
             <>
@@ -634,14 +631,14 @@ const disconnectChannel = async (channel: Channel) => {
               <div>
                 <h2 className="font-semibold">Daily YouTube Analytics</h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} Â· latest available data` : "Waiting for daily data"}
+                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} · latest available data` : "Waiting for daily data"}
                 </p>
               </div>
               <span className="rounded-lg bg-white/5 px-3 py-2 text-xs text-slate-300">{period === "total" ? "Lifetime" : period === "today" ? "Today" : period === "month" ? "This Month" : "Yesterday"}</span>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-white/5 p-4">
-                <p className="text-xs text-slate-400">Period Views Â· All Channels</p>
+                <p className="text-xs text-slate-400">Period Views · All Channels</p>
                 <p className="mt-2 text-2xl font-bold">{loading ? "..." : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : isTotal ? formatNumber(totalViews) : "Pending"}</p>
               </div>
               <div className="rounded-xl bg-white/5 p-4">
@@ -668,112 +665,117 @@ const disconnectChannel = async (channel: Channel) => {
 
             </>
           )}
-          {(isDashboard) && (
+          {isDashboard && (
             <>
-          {isToday && (
-            <div className="mb-6 rounded-2xl border border-white/10 bg-[#111a2b] p-5 md:p-6">
-              <h2 className="font-semibold">Today Â· Channel Tracking</h2>
-              <p className="mt-1 text-xs text-slate-400">Daily snapshots at 9:00 AM IST Â· first day collects baseline</p>
-              <div className="mt-4 space-y-3">
-                {(snapshots?.channels || []).map(channel => (
-                  <div key={channel.channelId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white/5 p-4">
+              <div className="mb-6 grid gap-5 xl:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold">{channel.name}</p>
-                      <p className="text-xs text-slate-400">{channel.status === "ready" ? "Comparison ready" : "Collecting Data Â· requires yesterday + today snapshots"}</p>
+                      <h2 className="text-base font-semibold text-white">Performance trends</h2>
+                      <p className="mt-1 text-xs text-slate-400">Daily views and estimated revenue across connected channels</p>
                     </div>
-                    <div className="flex flex-wrap gap-5 text-sm">
-                      <span>Views: <b>{channel.status === "ready" ? formatNumber(channel.viewsChange) : "â€”"}</b></span>
-                      <span>Subs (net): <b>{channel.status === "ready" ? formatNumber(channel.subscribersChange) : "â€”"}</b></span>
-                      <span>Videos: <b>{channel.status === "ready" ? formatNumber(channel.videosChange) : "â€”"}</b></span>
+                    <div className="flex gap-1 rounded-lg border border-white/10 bg-[#0b1220] p-1">
+                      {(["views", "revenue"] as const).map((metric) => (
+                        <button key={metric} type="button" onClick={() => setChartMetric(metric)}
+                          className={`rounded-md px-3 py-2 text-xs font-semibold ${chartMetric === metric ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"}`}>
+                          {metric === "views" ? "Views" : "Revenue"}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-            </>
-          )}
-          {(isDashboard) && (
-            <>
-          <div className="mb-6 grid gap-5 xl:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-[#111a2b] p-6 xl:col-span-2">
-              <h2 className="font-semibold">
-                Performance overview
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                Combined lifetime statistics
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                {[
-                  {
-                    label: "Total Views",
-                    value: formatNumber(totalViews),
-                  },
-                  {
-                    label: "Subscribers",
-                    value: formatNumber(totalSubscribers),
-                  },
-                  {
-                    label: "Total Videos",
-                    value: formatNumber(totalVideos),
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-xl bg-white/5 p-5"
-                  >
-                    <p className="text-xs text-slate-400">
-                      {item.label}
-                    </p>
-                    <p className="mt-3 text-2xl font-bold">
-                      {loading ? "..." : item.value}
-                    </p>
+                  <div className="mt-6">
+                    {isToday || isTotal
+                      ? <div className="flex min-h-[265px] flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#0b1220]/50 px-6 text-center">
+                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-xl text-blue-400">↗</div>
+                          <p className="font-semibold text-slate-200">Daily trend chart</p>
+                          <p className="mt-2 max-w-sm text-sm text-slate-400">Select Yesterday or This month to view reported daily analytics. Today uses snapshot tracking.</p>
+                        </div>
+                      : <DailyChart dates={visibleDates} series={chartSeries} metric={chartMetric} />}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-[#111a2b] p-6">
-              <h2 className="font-semibold">
-                Revenue summary
-              </h2>
-              <p className="mt-1 text-xs text-slate-400">
-                Current calendar month
-              </p>
-
-              <p className="mt-7 text-3xl font-bold text-emerald-400">
-                {loading
-                  ? "..."
-                  : thisMonth?.complete
-                  ? formatMoney(thisMonth.totalRevenueUSD)
-                  : "N/A"}
-              </p>
-
-              <p className="mt-2 text-xs text-slate-400">
-                {thisMonth
-                  ? `${thisMonth.period.startDate} to ${thisMonth.period.endDate}`
-                  : "No revenue period"}
-              </p>
-
-              <div className="mt-7 rounded-xl bg-white/5 p-4">
-                <p className="text-xs text-slate-400">
-                  Previous month earnings
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {lastMonth?.complete
-                    ? formatMoney(lastMonth.totalRevenueUSD)
-                    : "N/A"}
-                </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-semibold text-white">Revenue overview</h2>
+                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-400">USD</span>
+                  </div>
+                  <p className="mt-6 text-xs font-medium uppercase tracking-wider text-slate-400">Current month</p>
+                  <p className="mt-2 text-4xl font-bold tracking-tight text-emerald-400">
+                    {loading ? "—" : thisMonth?.complete ? formatMoney(thisMonth.totalRevenueUSD) : "N/A"}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {thisMonth ? `${thisMonth.period.startDate} – ${thisMonth.period.endDate}` : "Reporting period unavailable"}
+                  </p>
+                  <div className="my-6 h-px bg-white/10" />
+                  <p className="text-xs text-slate-400">Previous month</p>
+                  <p className="mt-2 text-2xl font-bold text-white">
+                    {lastMonth?.complete ? formatMoney(lastMonth.totalRevenueUSD) : "N/A"}
+                  </p>
+                  <p className="mt-5 rounded-xl bg-[#0b1220] p-3 text-xs leading-relaxed text-slate-400">
+                    Revenue is estimated and may change when YouTube finalizes earnings.
+                  </p>
+                </div>
               </div>
 
-              <p className="mt-4 text-xs text-slate-500">
-                Estimated revenue from authorized YouTube Analytics.
-              </p>
-            </div>
-          </div>
-
+              <div className="mb-6 grid gap-5 xl:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-semibold text-white">Connected channels</h2>
+                      <p className="mt-1 text-xs text-slate-400">Lifetime audience and video performance</p>
+                    </div>
+                    <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300">{channels.length} connected</span>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    {[
+                      { label: "Total views", value: formatNumber(totalViews) },
+                      { label: "Subscribers", value: formatNumber(totalSubscribers) },
+                      { label: "Published videos", value: formatNumber(totalVideos) },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-xl border border-white/5 bg-[#0b1220] p-4">
+                        <p className="text-xs text-slate-400">{item.label}</p>
+                        <p className="mt-3 text-xl font-bold tracking-tight text-white">{loading ? "—" : item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 space-y-2">
+                    {channels.map((channel) => (
+                      <div key={channel.channelId} className="flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.025] p-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <ChannelAvatar channel={channel} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">{channel.name}</p>
+                            <p className="text-xs text-slate-500">{formatNumber(channel.subscribers)} subscribers</p>
+                          </div>
+                        </div>
+                        <p className="shrink-0 text-sm font-semibold text-slate-200">{formatNumber(channel.totalViews)} <span className="font-normal text-slate-500">views</span></p>
+                      </div>
+                    ))}
+                    {!loading && channels.length === 0 && <p className="py-6 text-center text-sm text-slate-400">No channels connected yet.</p>}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
+                  <h2 className="text-base font-semibold text-white">Daily tracking</h2>
+                  <p className="mt-1 text-xs text-slate-400">9:00 AM IST snapshot comparisons</p>
+                  <div className="mt-6 flex items-center gap-3">
+                    <span className={`h-2.5 w-2.5 rounded-full ${snapshots?.complete ? "bg-emerald-400" : "bg-amber-400"}`} />
+                    <p className="text-sm font-semibold text-slate-200">{snapshots?.complete ? "Snapshot ready" : "Collecting baseline"}</p>
+                  </div>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                    {snapshots?.complete ? "Yesterday and today are available for comparison." : "Daily changes appear after consecutive snapshots have been collected."}
+                  </p>
+                  <div className="mt-5 space-y-3">
+                    {(snapshots?.channels || []).slice(0, 5).map((channel) => (
+                      <div key={channel.channelId} className="rounded-xl bg-[#0b1220] p-3">
+                        <p className="truncate text-xs font-semibold text-slate-200">{channel.name}</p>
+                        <div className="mt-2 flex justify-between gap-2 text-xs text-slate-400">
+                          <span>Views {channel.status === "ready" ? formatNumber(channel.viewsChange) : "—"}</span>
+                          <span>Subs {channel.status === "ready" ? formatNumber(channel.subscribersChange) : "—"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </>
           )}
           {(isChannelsPage) && (
@@ -960,8 +962,8 @@ const disconnectChannel = async (channel: Channel) => {
             </>
           )}
           <p className="mt-6 text-center text-xs text-slate-600">
-            Creator Command Center Â© 2026
-            {lastUpdated && ` Â· Updated ${lastUpdated}`}
+            Creator Command Center © 2026
+            {lastUpdated && ` · Updated ${lastUpdated}`}
           </p>
     </section>
   );
