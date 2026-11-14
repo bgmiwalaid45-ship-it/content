@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -141,7 +140,7 @@ function DailyChart({
                 ))}
                 {item.values.map((value, i) => value === null ? null : (
                   <circle key={i} cx={x(i)} cy={y(value)} r="3" fill={item.color}>
-                    <title>{`${item.name} · ${dates[i]} · ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
+                    <title>{`${item.name} Â· ${dates[i]} Â· ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
                   </circle>
                 ))}
               </g>
@@ -176,7 +175,7 @@ function ChannelAvatar({
   if (!channel.thumbnail || broken) {
     return (
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600 font-bold">
-        ▶
+        â–¶
       </div>
     );
   }
@@ -199,6 +198,70 @@ export default function WorkspaceContent() {
   const isChannelsPage = pathname === "/channels";
   const isComparisonPage = pathname === "/comparison";
   const pageTitle = isAnalyticsPage ? "Analytics" : isChannelsPage ? "My Channels" : isComparisonPage ? "Comparison" : "Dashboard";
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [permanentPanelOpen, setPermanentPanelOpen] = useState(false);
+  const [permanentLinks, setPermanentLinks] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [permanentUrl, setPermanentUrl] = useState("");
+  const [permanentBusy, setPermanentBusy] = useState(false);
+  const [permanentError, setPermanentError] = useState("");
+  const [permanentMessage, setPermanentMessage] = useState("");
+
+  const loadPermanentLinks = async () => {
+    setPermanentBusy(true);
+    setPermanentError("");
+    try {
+      const response = await fetch("/api/youtube/permanent-link", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to load links");
+      setPermanentLinks(data.links || []);
+    } catch (err) {
+      setPermanentError(err instanceof Error ? err.message : "Unable to load links");
+    } finally {
+      setPermanentBusy(false);
+    }
+  };
+
+  const createPermanentLink = async () => {
+    setPermanentBusy(true);
+    setPermanentError("");
+    setPermanentMessage("");
+    try {
+      const response = await fetch("/api/youtube/permanent-link", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to create link");
+      setPermanentUrl(data.url);
+      setPermanentLinks((current) => [{ id: data.id, name: data.name, created_at: data.createdAt }, ...current]);
+      setPermanentMessage("Link created. Copy and save it now; it cannot be retrieved later.");
+    } catch (err) {
+      setPermanentError(err instanceof Error ? err.message : "Unable to create link");
+    } finally {
+      setPermanentBusy(false);
+    }
+  };
+
+  const revokePermanentLink = async (id: string) => {
+    if (!window.confirm("Revoke this permanent link? New connections using it will be blocked.")) return;
+    setPermanentBusy(true);
+    setPermanentError("");
+    setPermanentMessage("");
+    try {
+      const response = await fetch("/api/youtube/permanent-link", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to revoke link");
+      setPermanentLinks((current) => current.filter((link) => link.id !== id));
+      setPermanentMessage("Link revoked successfully.");
+      setPermanentUrl("");
+    } catch (err) {
+      setPermanentError(err instanceof Error ? err.message : "Unable to revoke link");
+    } finally {
+      setPermanentBusy(false);
+    }
+  };
+
   const [channels, setChannels] = useState<Channel[]>([]);
   const [lastMonth, setLastMonth] =
     useState<RevenueResponse | null>(null);
@@ -211,6 +274,46 @@ export default function WorkspaceContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+
+const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
+
+const disconnectChannel = async (channel: Channel) => {
+  const confirmed = window.confirm(
+    `Disconnect "${channel.name}"?\n\nThis channel will be removed from your dashboard.`
+  );
+
+  if (!confirmed) return;
+
+  setDisconnectingId(channel.channelId);
+  setError("");
+
+  try {
+    const response = await fetch("/api/youtube/disconnect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        channelId: channel.channelId,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Unable to disconnect channel");
+    }
+
+    await loadDashboard();
+  } catch (err) {
+    setError(
+      err instanceof Error ? err.message : "Disconnect failed"
+    );
+  } finally {
+    setDisconnectingId(null);
+  }
+};
+
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -346,25 +449,25 @@ export default function WorkspaceContent() {
     {
       label: isTotal ? "Lifetime Views" : "Period Views",
       value: isTotal ? formatNumber(totalViews) : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : "Pending",
-      icon: "▶",
-      detail: isTotal ? "All connected channels · lifetime" : isToday ? "Snapshot-to-snapshot views change · 9 AM IST" : "YouTube Analytics reported views",
+      icon: "â–¶",
+      detail: isTotal ? "All connected channels Â· lifetime" : isToday ? "Snapshot-to-snapshot views change Â· 9 AM IST" : "YouTube Analytics reported views",
     },
     {
       label: isTotal ? "Current Subscribers" : "Subscribers Gained",
       value: isTotal ? formatNumber(totalSubscribers) : isToday ? todayValue(todayTotals?.subscribersChange) : isReported ? formatNumber(periodTotals.subscribersGained) : "Pending",
-      icon: "👥",
-      detail: isTotal ? "Current subscriber count" : isToday ? "Net subscriber change · 9 AM snapshots" : "Gross gains · not net change",
+      icon: "ðŸ‘¥",
+      detail: isTotal ? "Current subscriber count" : isToday ? "Net subscriber change Â· 9 AM snapshots" : "Gross gains Â· not net change",
     },
     {
       label: "Estimated Revenue",
       value: isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending",
-      icon: "💰",
-      detail: isTotal ? "Lifetime revenue not provided by this API" : "USD · YouTube estimated earnings",
+      icon: "ðŸ’°",
+      detail: isTotal ? "Lifetime revenue not provided by this API" : "USD Â· YouTube estimated earnings",
     },
     {
       label: isTotal ? "Total Videos" : isToday ? "Videos Change" : "Subscribers Net Change",
       value: isTotal ? formatNumber(totalVideos) : isToday ? todayValue(todayTotals?.videosChange) : isReported ? formatNumber(periodTotals.subscribersGained - periodTotals.subscribersLost) : "Pending",
-      icon: "📈",
+      icon: "ðŸ“ˆ",
       detail: isTotal ? "Current published video count" : isToday ? "Net video count change" : "Gained minus lost subscribers",
     },
   ];
@@ -390,19 +493,81 @@ export default function WorkspaceContent() {
                 disabled={loading}
                 className="rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold hover:bg-white/5 disabled:opacity-50"
               >
-                {loading ? "Loading..." : "↻ Refresh"}
+                {loading ? "Loading..." : "â†» Refresh"}
               </button>
 
-              <a
-                href="/api/youtube/connect"
+              <button
+                type="button"
+                onClick={() => setConnectModalOpen(true)}
                 className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500"
               >
                 + Connect Channel
-              </a>
-            </div>
+              </button>
+
+</div>
           </header>
 
-          {error && (
+{connectModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setConnectModalOpen(false); }}>
+    <div role="dialog" aria-modal="true" aria-label="Connect YouTube Channel" className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111a2b] p-6 shadow-2xl">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">Connect YouTube Channel</h2>
+        <button type="button" onClick={() => setConnectModalOpen(false)} aria-label="Close" className="rounded-lg px-3 py-2 text-slate-300 hover:bg-white/10">✕</button>
+      </div>
+      <a href="/api/youtube/connect" className="mb-3 block rounded-xl border border-blue-500/30 bg-blue-500/10 p-5 hover:bg-blue-500/20">
+        <span className="block font-semibold text-blue-200">Connect My Channel</span>
+        <span className="mt-1 block text-sm text-slate-400">Connect your own YouTube channel through Google.</span>
+      </a>
+      <button type="button" onClick={() => { setConnectModalOpen(false); setPermanentPanelOpen(true); void loadPermanentLinks(); }} className="w-full rounded-xl border border-white/10 bg-white/5 p-5 text-left hover:bg-white/10">
+        <span className="block font-semibold">Connect via Permanent Link</span>
+        <span className="mt-1 block text-sm text-slate-400">Create a reusable link for creators to authorize their channels.</span>
+      </button>
+      <p className="mt-4 text-xs text-slate-400">Creators must approve Google access and confirm before their channel is added.</p>
+    </div>
+  </div>
+)}
+{permanentPanelOpen && (
+  <div className="mb-6 rounded-2xl border border-blue-500/30 bg-[#111a2b] p-5 md:p-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 className="text-lg font-bold">Permanent Connection Links</h2>
+        <p className="mt-1 text-sm text-slate-400">Reusable invitations. Each creator must authorize and confirm separately.</p>
+      </div>
+      <button type="button" onClick={() => setPermanentPanelOpen(false)} className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/10">Close</button>
+    </div>
+    <div className="mt-5 flex flex-wrap gap-3">
+      <button type="button" onClick={() => void createPermanentLink()} disabled={permanentBusy} className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold hover:bg-blue-500 disabled:opacity-50">{permanentBusy ? "Please wait..." : "+ Create Permanent Link"}</button>
+      <button type="button" onClick={() => void loadPermanentLinks()} disabled={permanentBusy} className="rounded-xl border border-white/10 px-4 py-3 text-sm hover:bg-white/10 disabled:opacity-50">Refresh Links</button>
+    </div>
+    {permanentError && <p role="alert" className="mt-4 text-sm text-red-400">{permanentError}</p>}
+    {permanentMessage && <p className="mt-4 text-sm text-emerald-400">{permanentMessage}</p>}
+    {permanentUrl && (
+      <div className="mt-5 rounded-xl border border-blue-500/20 bg-slate-950/50 p-4">
+        <p className="mb-2 text-sm font-semibold">New Link — Save It Now</p>
+        <div className="flex flex-wrap gap-2">
+          <input readOnly aria-label="Permanent connection URL" value={permanentUrl} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm" />
+          <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(permanentUrl); setPermanentMessage("Link copied."); } catch { setPermanentError("Copy failed. Select the URL and copy it manually."); } }} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">Copy Link</button>
+        </div>
+        <p className="mt-2 text-xs text-amber-300">The URL is shown only when created. Store it securely; existing links cannot be displayed again.</p>
+      </div>
+    )}
+    <h3 className="mt-6 font-semibold">Active Links ({permanentLinks.length})</h3>
+    {permanentLinks.length === 0 && <p className="mt-3 text-sm text-slate-400">No active links found. Create one above.</p>}
+    <div className="mt-3 space-y-2">
+      {permanentLinks.map((link) => (
+        <div key={link.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div>
+            <p className="text-sm font-semibold">{link.name}</p>
+            <p className="text-xs text-slate-400">Created {new Date(link.created_at).toLocaleString()}</p>
+          </div>
+          <button type="button" disabled={permanentBusy} onClick={() => void revokePermanentLink(link.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50">Revoke</button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{error && (
             <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
               {error}
             </div>
@@ -469,14 +634,14 @@ export default function WorkspaceContent() {
               <div>
                 <h2 className="font-semibold">Daily YouTube Analytics</h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} · latest available data` : "Waiting for daily data"}
+                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} Â· latest available data` : "Waiting for daily data"}
                 </p>
               </div>
               <span className="rounded-lg bg-white/5 px-3 py-2 text-xs text-slate-300">{period === "total" ? "Lifetime" : period === "today" ? "Today" : period === "month" ? "This Month" : "Yesterday"}</span>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-white/5 p-4">
-                <p className="text-xs text-slate-400">Period Views · All Channels</p>
+                <p className="text-xs text-slate-400">Period Views Â· All Channels</p>
                 <p className="mt-2 text-2xl font-bold">{loading ? "..." : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : isTotal ? formatNumber(totalViews) : "Pending"}</p>
               </div>
               <div className="rounded-xl bg-white/5 p-4">
@@ -507,19 +672,19 @@ export default function WorkspaceContent() {
             <>
           {isToday && (
             <div className="mb-6 rounded-2xl border border-white/10 bg-[#111a2b] p-5 md:p-6">
-              <h2 className="font-semibold">Today · Channel Tracking</h2>
-              <p className="mt-1 text-xs text-slate-400">Daily snapshots at 9:00 AM IST · first day collects baseline</p>
+              <h2 className="font-semibold">Today Â· Channel Tracking</h2>
+              <p className="mt-1 text-xs text-slate-400">Daily snapshots at 9:00 AM IST Â· first day collects baseline</p>
               <div className="mt-4 space-y-3">
                 {(snapshots?.channels || []).map(channel => (
                   <div key={channel.channelId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white/5 p-4">
                     <div>
                       <p className="text-sm font-semibold">{channel.name}</p>
-                      <p className="text-xs text-slate-400">{channel.status === "ready" ? "Comparison ready" : "Collecting Data · requires yesterday + today snapshots"}</p>
+                      <p className="text-xs text-slate-400">{channel.status === "ready" ? "Comparison ready" : "Collecting Data Â· requires yesterday + today snapshots"}</p>
                     </div>
                     <div className="flex flex-wrap gap-5 text-sm">
-                      <span>Views: <b>{channel.status === "ready" ? formatNumber(channel.viewsChange) : "—"}</b></span>
-                      <span>Subs (net): <b>{channel.status === "ready" ? formatNumber(channel.subscribersChange) : "—"}</b></span>
-                      <span>Videos: <b>{channel.status === "ready" ? formatNumber(channel.videosChange) : "—"}</b></span>
+                      <span>Views: <b>{channel.status === "ready" ? formatNumber(channel.viewsChange) : "â€”"}</b></span>
+                      <span>Subs (net): <b>{channel.status === "ready" ? formatNumber(channel.subscribersChange) : "â€”"}</b></span>
+                      <span>Videos: <b>{channel.status === "ready" ? formatNumber(channel.videosChange) : "â€”"}</b></span>
                     </div>
                   </div>
                 ))}
@@ -652,6 +817,18 @@ export default function WorkspaceContent() {
                       <p className="text-xs text-slate-500">
                         {channel.channelId}
                       </p>
+
+<button
+  type="button"
+  onClick={() => void disconnectChannel(channel)}
+  disabled={disconnectingId === channel.channelId}
+  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+>
+  {disconnectingId === channel.channelId
+    ? "Disconnecting..."
+    : "Disconnect"}
+</button>
+
                     </div>
                   </div>
 
@@ -783,8 +960,8 @@ export default function WorkspaceContent() {
             </>
           )}
           <p className="mt-6 text-center text-xs text-slate-600">
-            Creator Command Center © 2026
-            {lastUpdated && ` · Updated ${lastUpdated}`}
+            Creator Command Center Â© 2026
+            {lastUpdated && ` Â· Updated ${lastUpdated}`}
           </p>
     </section>
   );

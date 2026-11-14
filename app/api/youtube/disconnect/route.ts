@@ -1,10 +1,25 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Check request origin
+    const origin = request.headers.get("origin");
+
+    if (
+      !origin ||
+      new URL(origin).origin !== request.nextUrl.origin
+    ) {
+      return NextResponse.json(
+        { error: "Invalid request origin" },
+        { status: 403 }
+      );
+    }
+
+    // Verify logged-in user
+    const supabase = await createServerClient();
 
     const {
       data: { user },
@@ -18,6 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate selected channel
     const body = await request.json().catch(() => null);
     const channelId = body?.channelId;
 
@@ -31,7 +47,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
+    // Admin client bypasses RLS.
+    // Ownership is enforced using user.id.
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { data, error } = await admin
       .from("youtube_channels")
       .delete()
       .eq("user_id", user.id)
@@ -39,7 +68,7 @@ export async function POST(request: NextRequest) {
       .select("channel_id");
 
     if (error) {
-      console.error("Disconnect failed:", error.message);
+      console.error("Disconnect failed:", error);
 
       return NextResponse.json(
         { error: "Unable to disconnect channel" },
@@ -49,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (!data?.length) {
       return NextResponse.json(
-        { error: "Channel not found or permission denied" },
+        { error: "Channel not found" },
         { status: 404 }
       );
     }
