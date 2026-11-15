@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import "./workspace-premium.css";
 
 type Channel = {
   channelId: string;
@@ -140,7 +141,7 @@ function DailyChart({
                 ))}
                 {item.values.map((value, i) => value === null ? null : (
                   <circle key={i} cx={x(i)} cy={y(value)} r="3" fill={item.color}>
-                    <title>{`${item.name} Â· ${dates[i]} Â· ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
+                    <title>{`${item.name} · ${dates[i]} · ${metric === "revenue" ? `$${value.toFixed(3)}` : value.toLocaleString("en-US")}`}</title>
                   </circle>
                 ))}
               </g>
@@ -175,7 +176,7 @@ function ChannelAvatar({
   if (!channel.thumbnail || broken) {
     return (
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600 font-bold">
-        â–¶
+        ▶
       </div>
     );
   }
@@ -501,19 +502,19 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
       value: isTotal ? formatNumber(totalViews) : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : "Pending",
     detail: isTotal ? "Across connected channels" : isToday ? "Growth since previous saved baseline" : "YouTube Analytics",
       accent: "blue",
-      symbol: "â†—",
+      symbol: "↗",
     },
     {
       label: isTotal ? "Total subscribers" : "Subscribers gained",
       value: isTotal ? formatNumber(totalSubscribers) : isToday ? todayValue(todayTotals?.subscribersChange) : isReported ? formatNumber(periodTotals.subscribersGained) : "Pending",
       detail: isTotal ? "Current combined subscriber count" : isToday ? "Net change from daily snapshots" : "Gross subscribers gained",
       accent: "violet",
-      symbol: "â—Ž",
+      symbol: "◎",
     },
     {
       label: "Estimated revenue",
       value: isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending",
-      detail: isTotal ? "Lifetime revenue not available" : "USD Â· reported YouTube earnings",
+      detail: isTotal ? "Lifetime revenue not available" : "USD · reported YouTube earnings",
       accent: "emerald",
       symbol: "$",
     },
@@ -522,16 +523,16 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
       value: isTotal ? formatNumber(totalVideos) : isToday ? todayValue(todayTotals?.videosChange) : isReported ? formatNumber(periodTotals.subscribersGained - periodTotals.subscribersLost) : "Pending",
       detail: isTotal ? "Across all connected channels" : isToday ? "Daily snapshot comparison" : "Gained minus lost",
       accent: "amber",
-      symbol: "â–¤",
+      symbol: "▤",
     },
   ];
 
   return (
-    <section id="dashboard" className="w-full min-w-0 pb-8">
-          <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <section id="dashboard" className="cc-premium w-full min-w-0 pb-8">
+          <header className="cc-page-header mb-8 flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-400">
-                Workspace / Creator analytics
+                CREATOR COMMAND CENTER  /  WORKSPACE
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-white md:text-4xl">
                 {pageTitle}
@@ -547,7 +548,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                 disabled={loading}
                 className="rounded-xl border border-white/10 bg-[#111827] px-4 py-3 text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-50"
               >
-                {loading ? "Loading..." : "â†» Refresh"}
+                {loading ? "Loading..." : "↻ Refresh"}
               </button>
 
               <button
@@ -566,7 +567,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
     <div role="dialog" aria-modal="true" aria-label="Connect YouTube Channel" className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111a2b] p-6 shadow-2xl">
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold">Connect YouTube Channel</h2>
-        <button type="button" onClick={() => setConnectModalOpen(false)} aria-label="Close" className="rounded-lg px-3 py-2 text-slate-300 hover:bg-white/10">âœ•</button>
+        <button type="button" onClick={() => setConnectModalOpen(false)} aria-label="Close" className="rounded-lg px-3 py-2 text-slate-300 hover:bg-white/10">✕</button>
       </div>
       <a href="/api/youtube/connect" className="mb-3 block rounded-xl border border-blue-500/30 bg-blue-500/10 p-5 hover:bg-blue-500/20">
         <span className="block font-semibold text-blue-200">Connect My Channel</span>
@@ -597,7 +598,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
     {permanentMessage && <p className="mt-4 text-sm text-emerald-400">{permanentMessage}</p>}
     {permanentUrl && (
       <div className="mt-5 rounded-xl border border-blue-500/20 bg-slate-950/50 p-4">
-        <p className="mb-2 text-sm font-semibold">New Link â€” Save It Now</p>
+        <p className="mb-2 text-sm font-semibold">New Link — Save It Now</p>
         <div className="flex flex-wrap gap-2">
           <input readOnly aria-label="Permanent connection URL" value={permanentUrl} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm" />
           <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(permanentUrl); setPermanentMessage("Link copied."); } catch { setPermanentError("Copy failed. Select the URL and copy it manually."); } }} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">Copy Link</button>
@@ -634,7 +635,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
           )}
 
           {(isDashboard || isAnalyticsPage) && (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 shadow-sm">
+            <div className="cc-period mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 shadow-sm">
               <div>
                 <p className="text-sm font-semibold text-white">Reporting period</p>
                 <p className="mt-1 text-xs text-slate-400">Choose the data range for performance metrics.</p>
@@ -654,9 +655,9 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
             </div>
           )}
           {isDashboard && (
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="cc-kpi-grid mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label} className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm transition-colors hover:border-white/20">
+                <div key={stat.label} className="cc-kpi-card relative overflow-hidden rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm transition-colors hover:border-white/20">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm font-medium text-slate-400">{stat.label}</p>
                     <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
@@ -667,7 +668,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                     }`}>{stat.symbol}</span>
                   </div>
                   <p className={`mt-5 text-2xl font-bold tracking-tight md:text-3xl ${stat.accent === "emerald" && stat.value.startsWith("$") ? "text-emerald-400" : "text-white"}`}>
-                    {loading ? "â€”" : stat.value}
+                    {loading ? "—" : stat.value}
                   </p>
                   <p className="mt-3 min-h-8 text-xs leading-relaxed text-slate-500">{stat.detail}</p>
                 </div>
@@ -681,14 +682,14 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
               <div>
                 <h2 className="font-semibold">Daily YouTube Analytics</h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} Â· latest available data` : "Waiting for daily data"}
+                  {visibleDates.length ? `${visibleDates[0]} to ${visibleDates[visibleDates.length - 1]} · latest available data` : "Waiting for daily data"}
                 </p>
               </div>
               <span className="rounded-lg bg-white/5 px-3 py-2 text-xs text-slate-300">{period === "total" ? "Lifetime" : period === "today" ? "Today" : period === "month" ? "This Month" : "Yesterday"}</span>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-white/5 p-4">
-                <p className="text-xs text-slate-400">Period Views Â· All Channels</p>
+                <p className="text-xs text-slate-400">Period Views · All Channels</p>
                 <p className="mt-2 text-2xl font-bold">{loading ? "..." : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : isTotal ? formatNumber(totalViews) : "Pending"}</p>
               </div>
               <div className="rounded-xl bg-white/5 p-4">
@@ -717,11 +718,11 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
           )}
           {isDashboard && (
             <>
-              <div className="mb-6 rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
+              <div className="cc-goal-card mb-6 rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <h2 className="text-base font-semibold text-white">Monthly Revenue Goal</h2>
-                    <p className="mt-1 text-xs text-slate-400">Combined target for all connected channels Â· {thisMonth?.period.startDate.slice(0, 7) || "Loading..."}</p>
+                    <p className="mt-1 text-xs text-slate-400">Combined target for all connected channels · {thisMonth?.period.startDate.slice(0, 7) || "Loading..."}</p>
                   </div>
                   <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">USD</span>
                 </div>
@@ -743,12 +744,12 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                     <div className="mt-6">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <p className="text-2xl font-bold text-white">{reported === null ? "Revenue unavailable" : formatMoney(reported)} <span className="text-base font-normal text-slate-400">/ {formatMoney(revenueGoal)}</span></p>
-                        <p className="text-sm font-semibold text-blue-300">{progress === null ? "â€”" : `${progress.toFixed(1)}% achieved`}</p>
+                        <p className="text-sm font-semibold text-blue-300">{progress === null ? "—" : `${progress.toFixed(1)}% achieved`}</p>
                       </div>
                       <div role="progressbar" aria-label="Revenue goal progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress ?? 0} className="mt-4 h-3 overflow-hidden rounded-full bg-slate-700">
                         <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress ?? 0}%` }} />
                       </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="cc-goal-stats mt-4 grid gap-3 sm:grid-cols-3">
                         <div className="rounded-xl bg-[#0b1220] p-4"><p className="text-xs text-slate-400">Reported revenue</p><p className="mt-2 text-lg font-bold text-emerald-400">{reported === null ? "N/A" : formatMoney(reported)}</p></div>
                         <div className="rounded-xl bg-[#0b1220] p-4"><p className="text-xs text-slate-400">Remaining target</p><p className="mt-2 text-lg font-bold text-white">{remaining === null ? "N/A" : formatMoney(remaining)}</p></div>
                         <div className="rounded-xl bg-[#0b1220] p-4"><p className="text-xs text-slate-400">Daily average needed</p><p className="mt-2 text-lg font-bold text-white">{remaining === null ? "N/A" : daysRemaining > 0 ? formatMoney(remaining / daysRemaining) : remaining === 0 ? "$0.000" : "No days left"}</p></div>
@@ -759,8 +760,8 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                 })()}
               </div>
 
-              <div className="mb-6 grid gap-5 xl:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
+              <div className="cc-dashboard-grid mb-6 grid gap-5 xl:grid-cols-3">
+                <div className="cc-panel rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h2 className="text-base font-semibold text-white">Performance trends</h2>
@@ -778,24 +779,24 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                   <div className="mt-6">
                     {isToday || isTotal
                       ? <div className="flex min-h-[265px] flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#0b1220]/50 px-6 text-center">
-                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-xl text-blue-400">â†—</div>
+                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-xl text-blue-400">↗</div>
                           <p className="font-semibold text-slate-200">Daily trend chart</p>
                           <p className="mt-2 max-w-sm text-sm text-slate-400">Select Yesterday or This month to view reported daily analytics. Today uses snapshot tracking.</p>
                         </div>
                       : <DailyChart dates={visibleDates} series={chartSeries} metric={chartMetric} />}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
+                <div className="cc-panel rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-base font-semibold text-white">Revenue overview</h2>
                     <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-400">USD</span>
                   </div>
                   <p className="mt-6 text-xs font-medium uppercase tracking-wider text-slate-400">Current month</p>
                   <p className="mt-2 text-4xl font-bold tracking-tight text-emerald-400">
-                    {loading ? "â€”" : thisMonth?.complete ? formatMoney(thisMonth.totalRevenueUSD) : "N/A"}
+                    {loading ? "—" : thisMonth?.complete ? formatMoney(thisMonth.totalRevenueUSD) : "N/A"}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">
-                    {thisMonth ? `${thisMonth.period.startDate} â€“ ${thisMonth.period.endDate}` : "Reporting period unavailable"}
+                    {thisMonth ? `${thisMonth.period.startDate} – ${thisMonth.period.endDate}` : "Reporting period unavailable"}
                   </p>
                   <div className="my-6 h-px bg-white/10" />
                   <p className="text-xs text-slate-400">Previous month</p>
@@ -808,8 +809,8 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                 </div>
               </div>
 
-              <div className="mb-6 grid gap-5 xl:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
+              <div className="cc-dashboard-grid mb-6 grid gap-5 xl:grid-cols-3">
+                <div className="cc-panel rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6 xl:col-span-2">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h2 className="text-base font-semibold text-white">Connected channels</h2>
@@ -825,7 +826,7 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                     ].map((item) => (
                       <div key={item.label} className="rounded-xl border border-white/5 bg-[#0b1220] p-4">
                         <p className="text-xs text-slate-400">{item.label}</p>
-                        <p className="mt-3 text-xl font-bold tracking-tight text-white">{loading ? "â€”" : item.value}</p>
+                        <p className="mt-3 text-xl font-bold tracking-tight text-white">{loading ? "—" : item.value}</p>
                       </div>
                     ))}
                   </div>
@@ -845,10 +846,10 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                     {!loading && channels.length === 0 && <p className="py-6 text-center text-sm text-slate-400">No channels connected yet.</p>}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
+                <div className="cc-panel rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
                   <h2 className="text-base font-semibold text-white">Daily tracking</h2>
                   <p className="mt-1 text-xs text-slate-400">
-  Hourly snapshots Â· 12 AMâ€“10 AM IST
+  Hourly snapshots · 12 AM–10 AM IST
 </p>
                   <div className="mt-6 flex items-center gap-3">
                     <span className={`h-2.5 w-2.5 rounded-full ${snapshots?.complete ? "bg-emerald-400" : "bg-amber-400"}`} />
@@ -862,8 +863,8 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                       <div key={channel.channelId} className="rounded-xl bg-[#0b1220] p-3">
                         <p className="truncate text-xs font-semibold text-slate-200">{channel.name}</p>
                         <div className="mt-2 flex justify-between gap-2 text-xs text-slate-400">
-                          <span>Views {channel.status === "ready" ? formatNumber(channel.viewsChange) : "â€”"}</span>
-                          <span>Subs {channel.status === "ready" ? formatNumber(channel.subscribersChange) : "â€”"}</span>
+                          <span>Views {channel.status === "ready" ? formatNumber(channel.viewsChange) : "—"}</span>
+                          <span>Subs {channel.status === "ready" ? formatNumber(channel.subscribersChange) : "—"}</span>
                         </div>
                       </div>
                     ))}
@@ -1056,10 +1057,9 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
             </>
           )}
           <p className="mt-6 text-center text-xs text-slate-600">
-            Creator Command Center Â© 2026
-            {lastUpdated && ` Â· Updated ${lastUpdated}`}
+            Creator Command Center © 2026
+            {lastUpdated && ` · Updated ${lastUpdated}`}
           </p>
     </section>
   );
 }
-
