@@ -365,7 +365,7 @@ const disconnectChannel = async (channel: Channel) => {
   // Stop once all connected channels have consecutive-day snapshots.
   // This reads existing data; it does not create a new server snapshot.
   useEffect(() => {
-    if (!isDashboard || period !== "today" || snapshots?.complete) return;
+   if (!isDashboard || period !== "today") return;
 
     const interval = window.setInterval(() => {
       const istHour = Number(
@@ -375,10 +375,10 @@ const disconnectChannel = async (channel: Channel) => {
           hourCycle: "h23",
         }).format(new Date())
       );
-      if (istHour >= 6 && istHour < 12 && document.visibilityState === "visible") {
+      if (document.visibilityState === "visible") {
         void loadDashboard();
       }
-    }, 15 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     return () => window.clearInterval(interval);
   }, [isDashboard, period, snapshots?.complete, loadDashboard]);
@@ -449,7 +449,7 @@ const disconnectChannel = async (channel: Channel) => {
     {
       label: isTotal ? "Lifetime views" : "Period views",
       value: isTotal ? formatNumber(totalViews) : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : "Pending",
-      detail: isTotal ? "Across connected channels" : isToday ? "Awaiting consecutive daily snapshots" : "YouTube Analytics",
+    detail: isTotal ? "Across connected channels" : isToday ? "Growth since previous saved baseline" : "YouTube Analytics",
       accent: "blue",
       symbol: "↗",
     },
@@ -755,13 +755,15 @@ const disconnectChannel = async (channel: Channel) => {
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm md:p-6">
                   <h2 className="text-base font-semibold text-white">Daily tracking</h2>
-                  <p className="mt-1 text-xs text-slate-400">9:00 AM IST snapshot comparisons</p>
+                  <p className="mt-1 text-xs text-slate-400">
+  Hourly snapshots · 12 AM–10 AM IST
+</p>
                   <div className="mt-6 flex items-center gap-3">
                     <span className={`h-2.5 w-2.5 rounded-full ${snapshots?.complete ? "bg-emerald-400" : "bg-amber-400"}`} />
                     <p className="text-sm font-semibold text-slate-200">{snapshots?.complete ? "Snapshot ready" : "Collecting baseline"}</p>
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-slate-400">
-                    {snapshots?.complete ? "Yesterday and today are available for comparison." : "Daily changes appear after consecutive snapshots have been collected."}
+                    {snapshots?.complete ? "Latest available snapshot compared with the previous saved baseline." : "Daily changes appear after consecutive snapshots have been collected."}
                   </p>
                   <div className="mt-5 space-y-3">
                     {(snapshots?.channels || []).slice(0, 5).map((channel) => (
