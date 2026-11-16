@@ -58,45 +58,71 @@ export async function GET() {
       new Date(Date.now() - 86400000)
     );
 
-    // Previous day's baseline.
+    // IST midnight converted to UTC.
+    const startUTC = new Date(
+      Date.parse(`${today}T00:00:00Z`) -
+        330 * 60 * 1000
+    );
+
+    const endUTC = new Date(
+      startUTC.getTime() + 86400000
+    );
+
+    // First snapshot of the current IST day.
     const { data: daily, error: dailyError } = await admin
       .from("channel_daily_snapshots")
       .select(
         "channel_id,snapshot_date,snapshot_time,total_views,subscribers,total_videos"
       )
       .eq("user_id", user.id)
-      .eq("snapshot_date", yesterday);
+      .eq("snapshot_date", today)
+      .order("snapshot_time", { ascending: true });
 
     if (dailyError) throw dailyError;
 
-    // Latest hourly observations.
+    // Today's hourly snapshots, earliest first.
     const { data: hourly, error: hourlyError } = await admin
       .from("channel_hourly_snapshots")
       .select(
         "channel_id,snapshot_time,total_views,subscribers,total_videos"
       )
       .eq("user_id", user.id)
-     .gte(
-  "snapshot_time",
-  new Date(
-    Date.parse(`${today}T00:00:00Z`) -
-    330 * 60 * 1000
-  ).toISOString()
-)
-      .order("snapshot_time", { ascending: false });
+      .gte("snapshot_time", startUTC.toISOString())
+      .lt("snapshot_time", endUTC.toISOString())
+      .order("snapshot_time", { ascending: true });
 
     if (hourlyError) throw hourlyError;
 
     const results = (channels ?? []).map((channel) => {
-      const previous = (daily ?? []).find(
+      const observations = (hourly ?? []).filter(
         (s) => s.channel_id === channel.channel_id
       );
 
-      const current = (hourly ?? []).find(
+      const firstDaily = (daily ?? []).find(
         (s) => s.channel_id === channel.channel_id
       );
 
-      if (!previous || !current) {
+      const firstHourly = observations[0];
+      const latestHourly =
+        observations[observations.length - 1];
+
+      // Use the earliest saved observation as baseline.
+      const baseline =
+        firstDaily && firstHourly
+          ? new Date(firstDaily.snapshot_time).getTime() <=
+            new Date(firstHourly.snapshot_time).getTime()
+            ? firstDaily
+            : firstHourly
+          : firstDaily ?? firstHourly;
+
+      // Require a later observation to calculate growth.
+      const ready =
+        baseline &&
+        latestHourly &&
+        new Date(latestHourly.snapshot_time).getTime() >
+          new Date(baseline.snapshot_time).getTime();
+
+      if (!ready || !baseline || !latestHourly) {
         return {
           channelId: channel.channel_id,
           name: channel.channel_name,
@@ -104,24 +130,24 @@ export async function GET() {
           viewsChange: null,
           subscribersChange: null,
           videosChange: null,
-          snapshotTime: current?.snapshot_time ?? null,
+          snapshotTime: latestHourly?.snapshot_time ?? null,
         };
       }
 
       const viewsChange =
-        Number(current.total_views) -
-        Number(previous.total_views);
+        Number(latestHourly.total_views) -
+        Number(baseline.total_views);
 
       const videosChange =
-        Number(current.total_videos) -
-        Number(previous.total_videos);
+        Number(latestHourly.total_videos) -
+        Number(baseline.total_videos);
 
       const subscribersChange =
-        current.subscribers == null ||
-        previous.subscribers == null
+        latestHourly.subscribers == null ||
+        baseline.subscribers == null
           ? null
-          : Number(current.subscribers) -
-            Number(previous.subscribers);
+          : Number(latestHourly.subscribers) -
+            Number(baseline.subscribers);
 
       return {
         channelId: channel.channel_id,
@@ -130,7 +156,7 @@ export async function GET() {
         viewsChange,
         subscribersChange,
         videosChange,
-        snapshotTime: current.snapshot_time,
+        snapshotTime: latestHourly.snapshot_time,
       };
     });
 
@@ -146,7 +172,7 @@ export async function GET() {
       today,
       yesterday,
       comparison:
-        "Previous daily snapshot to latest hourly snapshot",
+        "First saved IST-day snapshot to latest hourly snapshot",
       complete,
       readyChannels: ready.length,
       totalChannels: results.length,
