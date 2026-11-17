@@ -31,6 +31,11 @@ type RevenueResponse = {
   complete: boolean;
 };
 
+type RevenueSnapshotSummary = {
+  complete: boolean;
+  totalRevenueChangeUSD: number | null;
+};
+
 type DailyPoint = { date: string; views: number; revenueUSD: number; subscribersGained?: number; subscribersLost?: number };
 type AnalyticsChannel = {
   channelId: string;
@@ -269,6 +274,7 @@ export default function WorkspaceContent() {
   const [thisMonth, setThisMonth] =
     useState<RevenueResponse | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
+  const [revenueSnapshot, setRevenueSnapshot] = useState<RevenueSnapshotSummary | null>(null);
   const [snapshots, setSnapshots] = useState<SnapshotResponse | null>(null);
 const [revenueGoal, setRevenueGoal] = useState<number | null>(null);
 const [goalInput, setGoalInput] = useState("");
@@ -325,6 +331,11 @@ const disconnectChannel = async (channel: Channel) => {
     setError("");
 
     try {
+      const revenueSnapshotRequest = period === "today"
+        ? fetch("/api/youtube/revenue/snapshot/summary", { cache: "no-store" })
+            .then(async (response) => response.ok ? (await response.json()) as RevenueSnapshotSummary : null)
+            .catch(() => null)
+        : Promise.resolve(null);
       const responses = await Promise.all([
         fetch("/api/youtube/channels", { cache: "no-store" }),
         fetch("/api/youtube/revenue", { cache: "no-store" }),
@@ -359,6 +370,7 @@ fetch("/api/revenue-goals", { cache: "no-store" }),
       setThisMonth(currentData);
       setAnalytics(analyticsData);
       setSnapshots(snapshotData);
+      setRevenueSnapshot(await revenueSnapshotRequest);
 const combinedGoal = goalData.goals?.find(
   (goal: { channel_id: string; target_usd: number }) =>
     goal.channel_id === "all"
@@ -412,27 +424,19 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
     void loadDashboard();
   }, [loadDashboard]);
 
-  // Check every 15 minutes between 06:00 and 12:00 IST while the page is open.
-  // Stop once all connected channels have consecutive-day snapshots.
+  // Check every 5 minutes while the Today dashboard is open.
   // This reads existing data; it does not create a new server snapshot.
   useEffect(() => {
-   if (!isDashboard || period !== "today") return;
+   if ((!isDashboard && !isAnalyticsPage) || period !== "today") return;
 
     const interval = window.setInterval(() => {
-      const istHour = Number(
-        new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Kolkata",
-          hour: "2-digit",
-          hourCycle: "h23",
-        }).format(new Date())
-      );
       if (document.visibilityState === "visible") {
         void loadDashboard();
       }
     }, 5 * 60 * 1000);
 
     return () => window.clearInterval(interval);
-  }, [isDashboard, period, snapshots?.complete, loadDashboard]);
+  }, [isDashboard, isAnalyticsPage, period, loadDashboard]);
 
   const totalViews = channels.reduce(
     (sum, c) => sum + Number(c.totalViews || 0),
@@ -496,6 +500,11 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
   const todayTotals = snapshots?.totals;
   const todayValue = (value: number | null | undefined) =>
     todayReady && value !== null && value !== undefined ? formatNumber(value) : "Collecting Data";
+  const todayRevenueValue = revenueSnapshot?.complete &&
+    typeof revenueSnapshot.totalRevenueChangeUSD === "number" &&
+    Number.isFinite(revenueSnapshot.totalRevenueChangeUSD)
+      ? formatMoney(revenueSnapshot.totalRevenueChangeUSD)
+      : "Collecting Data";
   const stats = [
     {
       label: isTotal ? "Lifetime views" : "Period views",
@@ -512,9 +521,9 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
       symbol: "◎",
     },
     {
-      label: "Estimated revenue",
-      value: isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending",
-      detail: isTotal ? "Lifetime revenue not available" : "USD · reported YouTube earnings",
+      label: isToday ? "Today’s revenue update" : "Estimated revenue",
+      value: isToday ? todayRevenueValue : isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending",
+      detail: isToday ? "Reported earnings change since today’s first snapshot · hourly" : isTotal ? "Lifetime revenue not available" : "USD · reported YouTube earnings",
       accent: "emerald",
       symbol: "$",
     },
@@ -693,8 +702,8 @@ setGoalInput(savedTarget !== null ? String(savedTarget) : "");
                 <p className="mt-2 text-2xl font-bold">{loading ? "..." : isToday ? todayValue(todayTotals?.viewsChange) : isReported ? formatNumber(periodTotals.views) : isTotal ? formatNumber(totalViews) : "Pending"}</p>
               </div>
               <div className="rounded-xl bg-white/5 p-4">
-                <p className="text-xs text-slate-400">Period Estimated Revenue</p>
-                <p className="mt-2 text-2xl font-bold text-emerald-400">{loading ? "..." : isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending"}</p>
+                <p className="text-xs text-slate-400">{isToday ? "Today’s Revenue Update" : "Period Estimated Revenue"}</p>
+                <p className="mt-2 text-2xl font-bold text-emerald-400">{loading ? "..." : isToday ? todayRevenueValue : isReported ? formatMoney(periodTotals.revenueUSD) : isTotal ? "N/A" : "Pending"}</p>
               </div>
             </div>
             <div className="mt-6 flex gap-2">
